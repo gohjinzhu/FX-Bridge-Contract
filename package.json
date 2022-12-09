@@ -19,6 +19,8 @@
   },
   "homepage": "https://github.com/gohjinzhu/FX-Bridge-Contract#readme",
   "dependencies": {
+    "csv-stringify": "^6.2.3",
+    "file-system": "^2.2.2",
     "mathjs": "^11.5.0",
     "web3": "^1.8.1"
   }
