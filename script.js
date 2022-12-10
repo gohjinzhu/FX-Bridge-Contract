@@ -4,13 +4,10 @@ import Web3 from 'web3';
 import fxBridgeContract from './contracts/fx_bridge.js'
 import registeredTokens from './contracts/registeredTokens.js';
 import { bignumber, multiply } from 'mathjs'
-import fs from "fs";
-import { stringify } from 'csv-stringify'
+import writeCSV from './utils/writeCSV.js';
 
 const web3 = new Web3("https://cloudflare-eth.com")
 const data = []
-const filename = "fx-bridge token supply.csv";
-const writableStream = fs.createWriteStream(filename);
 const columns = [
     "Timestamp (At request)",
     "Block Height",
@@ -25,7 +22,6 @@ const columns = [
     "FRAX (Ether)",
     "USDC (Ether)",
 ];
-const stringifier = stringify({ header: true, columns: columns });
 
 /* Check instance of web3 */
 // async function getBlockNumber() {
@@ -79,32 +75,28 @@ const getTotalSupply = async (contract) => {
 
 /* Format data in rows for .csv file */
 const getBatchTotalSupply = async (registeredTokens) => {
-    const res = [];
+    const tokenSupplies = [];
     const timestamp = Date()
     const latestBlockNumber = await web3.eth.getBlockNumber()
-    res.push(timestamp, latestBlockNumber)
+    tokenSupplies.push(timestamp, latestBlockNumber)
     for (const token in registeredTokens) {
         const tokenContract = registeredTokens[token](web3)
         const supplyLockedInEther = await getTotalSupply(tokenContract)
         //push data in this order: PUNDIX,USDT,DAI,EURS,LINK,C98,WETH,BUSD,FRAX,USDC
-        res.push(supplyLockedInEther)
+        tokenSupplies.push(supplyLockedInEther)
         // console.log(`Total supply of ${token} locked in bridge is ${data} Ether`)
     }
-    return res
+    return tokenSupplies
 }
 
 const intervalId = setInterval(async function () {
-    const res = await getBatchTotalSupply(registeredTokens)
-    data.push(res)
+    const tokenSupplies = await getBatchTotalSupply(registeredTokens)
+    data.push(tokenSupplies)
 }, 5000);
 
 setTimeout(() => {
     clearInterval(intervalId)
-    data.forEach(row => {
-        stringifier.write(row);
-    });
-    stringifier.pipe(writableStream);
-    console.log("Finished writing data");
+    writeCSV("fx-bridge token supply.csv",columns,data)
 }, 65000);
 
 
